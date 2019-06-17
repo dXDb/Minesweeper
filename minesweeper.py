@@ -19,7 +19,7 @@ import random
 class Ui_SubWindow(QWidget):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("SubWindow")
-        MainWindow.resize(170, 126)
+        MainWindow.setFixedSize(170, 126)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("sub_centralwidget")
 
@@ -91,30 +91,44 @@ class Ui_MainWindow(QWidget):
         self.y          = -1
         self.start      = -1
         self.fail_value = False
+        self.icon_board = list()
 
 
     def setupUi(self, MainWindow):
         # 메인 윈도우 설정
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(30 * self.xx, 30 * self.yy + 21)
+        MainWindow.setFixedSize(30 * self.xx, 30 * self.yy + 21 + 50)
 
         # central widget 부분 (상태바, 메뉴바 이런 것이 아닌 주요 기능을 하는 곳임)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
+        self.centralwidget.setStyleSheet("background:black")
         
         #판 생성
+        self.reset_board = QPushButton(self.centralwidget)
+        self.reset_board.setGeometry(QRect((30 * self.xx) / 2 - 20, 5, 40, 40))
+        self.reset_board.setObjectName("replace")
+        self.reset_board.setIcon(QIcon("reset.png"))
+        self.reset_board.setStyleSheet("background:black")
+        self.Label4      = QLabel(self.centralwidget)
+        self.Label4.setGeometry(QRect(0, 49, 30 * self.xx, 2))
+        self.Label4.setStyleSheet("background:white")
         self.make_button()
 
         # win or lose 이미지
+        self.winB   = QLabel(self.centralwidget)
+        self.winB.setGeometry(QRect(0, 0, 0, 0))
+        self.winB.setStyleSheet("background:black")
         self.winL   = QLabel(self.centralwidget)
-        self.winL.setStyleSheet("background:black; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);")
         self.winL.setGeometry(QRect(0, 0, 0, 0))
         self.win    = QPushButton(self.centralwidget)
         self.win.setStyleSheet("background:black")
         self.win.setGeometry(QRect(0, 0, 0, 0))
         
+        self.loseB  = QLabel(self.centralwidget)
+        self.loseB.setGeometry(QRect(0, 0, 0, 0))
+        self.loseB.setStyleSheet("background:black")
         self.loseL  = QLabel(self.centralwidget)
-        self.loseL.setStyleSheet("background:black; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);")
         self.loseL.setGeometry(QRect(0, 0, 0, 0))
         self.lose   = QPushButton(self.centralwidget)
         self.lose.setStyleSheet("background:black")
@@ -155,27 +169,44 @@ class Ui_MainWindow(QWidget):
         self.reset.setText(_translate("MainWindow", "Setting"))
 
         # 윈도우에 표시
+        self.Label4.setText(_translate("MainWindow", ''))
+        self.reset_board.setText(_translate("MainWindow", ''))
+        self.reset_board.clicked.connect(lambda : setting_board(self.xx, self.yy, self.bomb))
         for y in range(self.yy):
             for x in range(self.xx):
                 self.board[y][x].setText(_translate("MainWindow", ' '))
                 self.board[y][x].clicked.connect(self.check)
+                self.board[y][x].setContextMenuPolicy(Qt.CustomContextMenu)
+                self.board[y][x].customContextMenuRequested.connect(self.mine_expect)
         
         # 버튼 동작
         self.win.clicked.connect(reset_board)
         self.lose.clicked.connect(reset_board)
-        
-                
+                       
     # 처음 판 생성
     def make_button(self):
         self.board = [[0 for j in range(self.xx)] for i in range(self.yy)]
+        self.icon_board = [[0 for j in range(self.xx)] for i in range(self.yy)]
         for y in range(self.yy):
             for x in range(self.xx):
                 self.board[y][x] = QPushButton(self.centralwidget)
-                self.board[y][x].setGeometry(QRect(0 + x * 30, 0 + y * 30, 30, 30))
+                self.board[y][x].setGeometry(QRect(0 + x * 30, 50 + y * 30, 30, 30))
                 self.board[y][x].setObjectName("%d" %(x + (y * self.xx)))
                 self.board[y][x].setStyleSheet("background:white")
                 
-                
+        
+    # 오른쪽 클릭        
+    def mine_expect(self):
+        if self.sender().text() == ' ' and self.icon_board[int(self.sender().objectName()) // self.xx][int(self.sender().objectName()) % self.xx] == 0:
+            self.sender().setIcon(QIcon('reset.png'))
+            self.icon_board[int(self.sender().objectName()) // self.xx][int(self.sender().objectName()) % self.xx] = 1            
+            return
+
+        if self.sender().text() == ' ' and self.icon_board[int(self.sender().objectName()) // self.xx][int(self.sender().objectName()) % self.xx] == 1:
+            self.sender().setIcon(QIcon(''))
+            self.icon_board[int(self.sender().objectName()) // self.xx][int(self.sender().objectName()) % self.xx] = 0            
+
+            
     def check(self):
         now_y = int(self.sender().objectName()) // self.xx
         now_x = int(self.sender().objectName()) % self.xx
@@ -281,8 +312,10 @@ class Ui_MainWindow(QWidget):
                     self.board[i][j].setText('')
                     self.board[i][j].setIcon(QIcon('-1.png'))
         self.winL.setPixmap(QPixmap('win.png'))
-        self.winL.resize(30 * self.xx, 30 * self.yy + 21)
-        self.win.resize(30 * self.xx, 30 * self.yy + 21)
+        self.winL.resize(30 * self.xx, 30 * self.yy + 21 + 50)
+        self.winL.move((30 * self.xx)/2 - 75, 0)
+        self.winB.resize(30 * self.xx, 30 * self.yy + 21 + 50)
+        self.win.resize(30 * self.xx, 30 * self.yy + 21 + 50)
         opacity_effect = QGraphicsOpacityEffect(self.win)
         opacity_effect.setOpacity(0)
         self.win.setGraphicsEffect(opacity_effect)
@@ -295,18 +328,28 @@ class Ui_MainWindow(QWidget):
                 if self.board[i][j].text() == ' ':
                     self.mine_check(i, j)
         self.loseL.setPixmap(QPixmap('lose.png'))
-        self.loseL.resize(30 * self.xx, 30 * self.yy + 21)
-        self.lose.resize(30 * self.xx, 30 * self.yy + 21)
+        self.loseL.resize(30 * self.xx, 30 * self.yy + 21 + 50)
+        self.loseL.move((30 * self.xx)/2 - 75, 0)
+        self.loseB.resize(30 * self.xx, 30 * self.yy + 21 + 50)
+        self.lose.resize(30 * self.xx, 30 * self.yy + 21 + 50)
         opacity_effect = QGraphicsOpacityEffect(self.lose)
         opacity_effect.setOpacity(0)
         self.lose.setGraphicsEffect(opacity_effect)
         
 
 
-
-def reset_board(self):
+def reset_board():
     goMainWindow.close()
     SubWindow.show()
+
+
+
+def setting_board(x, y, bomb):
+    goMainWindow.close()
+    ui = Ui_MainWindow(x, y, bomb)
+    ui.setupUi(goMainWindow)
+    goMainWindow.show()    
+
 
 
 def start_main():
